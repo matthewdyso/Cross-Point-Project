@@ -83,6 +83,78 @@ AINH = "CE14"; BINH = "CE15"; CINH = "CE6"
 AWG1 = "CE7"; AWG2 = "CE3"
 JP5 = "CE8"; JP6 = "CE9"; JP7 = "CE10"; JP8 = "CE11"
 JP9 = "CE4"; JP10 = "CE5"; JP11 = "CE12"; JP12 = "CE31"
+
+'''
+Tests all the pins by conneting DAC and ADC to each pin with a jumper
+
+Utilizes ManualMartix() to set jumpers, AWGSendWave() to send signals, and Get_Data()
+to retrieve the signal
+
+Notes:
+JP1-8 can connet to TL1-16 and BL1-16
+JP9-16 can connect to TR2-17 and BR1-16
+TL17, TR1 can connect to any JP1-4 and JP13-16
+
+'''
+def pin_test():
+    global ser, CompString, JumperString, OnOffString, NumConn
+    
+    # Connect DAC1
+    JumperString = "JP1"
+    CompString = "AWG1"
+    OnOffString = "1"
+    ManualMartix()
+    
+    # Connect ADC1
+    JumperString = "JP2"
+    CompString = "AINH"
+    OnOffString = "1"
+    ManualMartix()
+
+    regions = ["TL", "BL", "TR", "BR"]
+    # Begin testing for left side of the board
+    upper_range = 0
+    for region in regions:
+        # Top region of breadboard has 17 while bottom has 16
+        if region[0] == "T":
+            upper_range = 17
+        else:
+            upper_range = 16
+        
+        # Change jumper according to region due to limitations
+        if region[1] == "L":
+            JPADC = "JP1"
+            JPDAC = "JP2"
+        else:
+            JPADC = "JP15"
+            JPDAC = "JP16"
+            
+        for i in range(1,upper_range+1):
+            # Test the pins by shorting ADC1 and DAC1
+            JumperString = JPADC
+            CompString = region + str(i)
+            OnOffString = "1"
+            ManualMartix()
+            
+            JumperString = JPDAC
+            CompString = region + str(i)
+            OnOffString = "1"
+            ManualMartix()
+            
+            AWGASendWave(AWG1)
+            Get_Data()
+            
+            # Disconnect pins
+            JumperString = JPADC
+            CompString = region + str(i)
+            OnOffString = "0"
+            ManualMartix()
+            
+            JumperString = JPDAC
+            CompString = region + str(i)
+            OnOffString = "0"
+            ManualMartix()
+
 #
 # Cross point matrix functions
 def ReadNetlist(nfp):
@@ -94,7 +166,7 @@ def ReadNetlist(nfp):
         NetList = open(nfp, 'r', encoding='utf-8')
     lines = NetList.readlines()
     NetList.close()
-    #print(lines)
+    #print(lines)``
     # create a list of strings for all subcircuit istance lines in netlist, ignore rest
     netlist_stripped = []
     for line in lines:
